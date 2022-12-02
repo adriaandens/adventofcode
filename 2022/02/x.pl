@@ -1,19 +1,10 @@
-my $total;
 map {
 	s/(\w) (\w)/$a=ord($1);$b=ord($2)-23/e;
-
-	# Value of my chose
-	my $score = $b - 64;
-
-	# Checking whether it was a win, draw, loss
-	if($b == $a + 1 || $b - $a == -2) { # you win
-		$score += 6;
-	} elsif($a == $b) {
-		$score += 3;
-	}
-	$total += $score;
+	$t += $b - 64; # my choice
+	$t += 6 if $b == $a + 1 || $b - $a == -2; # we win
+	$t += 3 if $a == $b; # we have a draw
 } <>;
-print "Solution: $total\n";
+print $t;
 
 __END__
 a == x == rock == 1
