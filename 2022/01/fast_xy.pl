@@ -1,4 +1,4 @@
-map {
+while(<>) {
 	if(length == 1) {
 		if($local_sum >= $max) {
 			$max3 = $max2;
@@ -14,7 +14,7 @@ map {
 	} else {
 		$local_sum += $_;
 	}
-} <>;
+}
 print $max . "\n";
 print $max + $max2 + $max3 . "\n";
 
@@ -39,5 +39,15 @@ $ time perl fast_xy.pl < ~/Unsorted/aoc_2022_day01_large_input.txt
 
 real	0m34.893s
 user	0m29.955s
-sys	0m4.936s
+sys		0m4.936s
 -> Saves us 5 seconds
+
+Changing the `map {} <>` to a `while(<>) {}` gives also a signifcant speed up:
+$ time perl fast_xy.pl < ~/Unsorted/aoc_2022_day01_large_input.txt 
+184028272
+549010145
+
+real	0m12.601s
+user	0m12.537s
+sys		0m0.056s
+-> Shaves of an impressive 22 seconds
