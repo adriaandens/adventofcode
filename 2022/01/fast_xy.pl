@@ -13,7 +13,7 @@ while(<F>) {
 		}
 		$local_sum = 0;
 	} else {
-		$local_sum += $_;
+		$local_sum += int($_);
 	}
 }
 print $max . $/;
@@ -63,4 +63,12 @@ user	0m12.366s
 sys	0m0.056s
 -> No real significant change.
 
+Doing an explicit cast of `$_` to `int()`.
+$ time perl fast_xy.pl
+184028272
+549010145
 
+real	0m12.200s
+user	0m12.158s
+sys	0m0.041s
+-> No real significant change.
