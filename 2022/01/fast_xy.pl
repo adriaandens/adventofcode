@@ -1,5 +1,5 @@
 map {
-	if(/^$/) {
+	if(length == 1) {
 		if($local_sum >= $max) {
 			$max3 = $max2;
 			$max2 = $max;
@@ -30,4 +30,14 @@ $ time perl fast_xy.pl < ~/Unsorted/aoc_2022_day01_large_input.txt
 
 real	0m39.708s
 user	0m35.174s
-sys	0m4.528s
+sys		0m4.528s
+
+Changing the regex with a dumb length check (the empty line '\n' has length 1):
+$ time perl fast_xy.pl < ~/Unsorted/aoc_2022_day01_large_input.txt 
+184028272
+549010145
+
+real	0m34.893s
+user	0m29.955s
+sys	0m4.936s
+-> Saves us 5 seconds
