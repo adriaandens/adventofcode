@@ -16,8 +16,8 @@ while(<F>) {
 		$local_sum += int($_);
 	}
 }
-print $max . $/;
-print $max + $max2 + $max3 . $/;
+print $max . "\n";
+print $max + $max2 + $max3 . "\n";
 
 __END__
 Background: https://gathering.tweakers.net/forum/list_message/73652172#73652172 provides a 493MB input file to test our implementations on.
@@ -72,3 +72,13 @@ real	0m12.200s
 user	0m12.158s
 sys	0m0.041s
 -> No real significant change.
+
+Managing the IO and slurping the file into the filehandle in one go to then do the split ourselves makes it slower:
+$ time perl fast_xy.pl
+184028272
+549010145
+
+real	0m17.971s
+user	0m15.834s
+sys	0m2.136s
+-> 6s slower when doing line splits ourselves :'(
