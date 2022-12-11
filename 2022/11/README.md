@@ -12,12 +12,32 @@ In the words of AoC, we need to keep our worry levels under control.
 
 ### Solving
 
-To abstract the problem a bit, we basically have a really big number _a_ which is divided by the test numbers. We also notice that the test numbers in the sample input and the real input are all prime.
-
-In our code, the remainder decides what path to take in the code and which monkey the item goes to.
+To abstract the problem a bit, we basically have a really big number _a_ which is divided by the test numbers. In our code, the remainder decides what path to take in the code and which monkey the item is passed.
 So if we find an equivalent (smaller) number _b_ which has the same remainders as the really big number _a_, we take the same branches in our code and we can keep our number arithmetics under control.
 
-Now how do find a smaller number _b_? Turns out you can find this _b_ by the least common divider of the test numbers and since those numbers are all prime, this is their product (they have no common prime factor since they're prime and don't have factors...). The remainder of _a_ divided by the product of the primes is the smaller _b_.
+Now how do find a smaller number _b_ or how do find a bigger divisor so our number becomes smaller without messing up the remainders and thus the branches we take in our code? 
+
+If you say remainders, you say **modulo**. And when you say **modulo**, you say _number theory_. The following is true:
+```
+If <bigger divisor> mod <test divisor> = 0:
+(a mod <test divisor>) mod <bigger divisor> = a mod <bigger divisor>
+``` 
+
+The first line means that the bigger divisor we need to find needs to be a multiple of our test divisor. The second line means that you can switch out the smaller test divisor by the bigger divisor and the module/remainder result will stay the same.
+
+Since we have different test divisors and our item can move to any monkey (in theory), we actually need to find a bigger divisor that holds for every of the test divisors, so:
+```
+<bigger divisor> mod <test divisor monkey 0> = 0
+<bigger divisor> mod <test divisor monkey 1> = 0
+<bigger divisor> mod <test divisor monkey 2> = 0
+<bigger divisor> mod <test divisor monkey 3> = 0
+<bigger divisor> mod <test divisor monkey 4> = 0
+...
+```
+
+The easiest way to find such a bigger divisor is just to take the product of all the test divisors, it's guaranteed to be divisable by all test numbers since we used the test divisors to make the bigger divisor. For prime numbers, this is also the optimal lowest common multiplier (LCM) between the test divisors. For other natural numbers, this is just one of the solutions but not guaranteed to be the lowest (which is OK for us!).
+
+So that's a lot of words to say that to find the smaller _b_ we just modulo our big number _a_ by the product of the test divisors and we take the same branches in the code.
 
 #### Example(s)
 
@@ -58,4 +78,4 @@ b % 7 = 8 % 7 = remainder 1
 
 #### My code for part 2
 
-My code is a bit weird in that I only found out about the above _number theory_ after messing around with primes. So you'll see that each item and worry level is an array containing all the prime factors of the original number. Honestly, it's a bit of a mess because of the "+" operation. Additions don't play nice with prime factors. It also doesn't really seem necessary to find the smaller equivalent number in every case so I just did it for the addition operation.
+My code is a bit weird in that I only found out about the above _number theory_ after messing around with primes. So you'll see that each item and worry level is an array containing all the prime factors of the original number. Honestly, it's a bit of a mess because of the "+" operation. Additions don't play nice with prime factors. It also doesn't really seem necessary to find the smaller equivalent number in every case so I just did it for the addition operation where I forced to calculate the resulting number and thus could do the above switcharoo.
