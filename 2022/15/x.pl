@@ -22,10 +22,6 @@ while(<>) {
 	}
 }
 
-#foreach(keys(%rows)) {
-#	say "Key: $_";
-#}
-
 say "Solution: " . lookup(10);
 say "Solution: " . lookup(2000000);
 
@@ -35,6 +31,7 @@ sub lookup {
 	my @row = @{$rows{$y_co}};
 	my %bips = ();
 
+	# For every position in our range, we set the "bit" of the x-co in the %bips hashmap. It'll result in all unique positions to be covered in %bips.
 	for(my $i = 0; $i < @row; $i++) {
 		$row[$i] =~ /(-?\d+)<->(-?\d+)/;
 		my $from = $1; my $to = $2;
@@ -44,34 +41,12 @@ sub lookup {
 	}
 
 	# Don't count positions where we have a beacon.
+	# Beacons are always inside a range because our ranges come from the manhattan distance between a sensor and a beacon. So there's no case where we have a beacon outside of our ranges. (Otherwise %bips might not contain the beacon bip.
 	foreach(@{$beacons_per_row{$y_co}}) {
 		my $x_co = $_;
 		delete $bips{$x_co};
 	}
-	my @k = keys(%bips);
-	say "@k";
 	return scalar(keys(%bips));
-	
-	#my $unique_positions = 0;
-	#for(my $i = 0; $i < @row; $i++) {
-	#	say "Range: " . $row[$i];
-	#	$row[$i] =~ /(-?\d+)<->(-?\d+)/;
-	#	my $from = $1; my $to = $2;
-	#	
-	#	for(my $j = 0; $j < @row; $j++) {
-	#		next if $i == $j; # Same range
-	#		$row[$j] =~ /(-?\d+)<->(-?\d+)/;
-	#		my $from2 = $1; my $to2 = $2;
-
-	#		if($from2 <= $from && $to <= $to2) { # Range 2 fully encompasses range 1
-	#			$unique_positions = 0;
-	#		} elsif($from < $from2 && $to <= $to2) { # Range 1 has a part in front that is unique
-	#		
-	#		}
-	#	}
-
-	#}
-
 }
 
 # Wikipedia: "the distance between two points is the sum of the absolute differences of their Cartesian coordinates"
