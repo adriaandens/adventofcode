@@ -2,10 +2,8 @@ use feature 'say';
 
 my @blocks = ("####", ".#.\n###\n.#.", "..#\n..#\n###", "#\n#\n#\n#", "##\n##");
 my @rows = ();
-
 my @pattern = split //, <>;
 pop @pattern; # Pop off the newline
-say "Pattern is @pattern";
 my $amount_of_rocks = 2022;
 
 my $i = 0; my $j = 0;
@@ -24,23 +22,19 @@ while($i < $amount_of_rocks) {
 		if($jet_push eq '>') { # We go right
 			# Can we move to the right or are we against a wall or other block?
 			if(can_move_right($block)) {
-				say "We can go right";
 				$block->{horizontal}++;
-			} else { say "We cannot go right :'("; }
+			}
 		} else { # We go left
 			# Can we move to the left or are we against a wall or other block?
 			if(can_move_left($block)) {
-				say "We can go left";
 				$block->{horizontal}--;
-			} else { say "We cannot go left :'("; }
+			}
 		}
 
 		# Falling down
 		if(can_move_down($block)) {
-			say "We can go down";
 			$block->{vertical}--;
 		} else {
-			say "We can't go down so map the block and start the other block";
 			map_block($block);
 			$collision = 1;
 		}
@@ -48,8 +42,7 @@ while($i < $amount_of_rocks) {
 		$j++;
 	}
 
-	print_tetris();
-
+	#print_tetris();
 	$i++;
 }
 say "Solution: " . height_of_highest_rock();
@@ -74,12 +67,11 @@ sub map_block {
 	foreach(@{$block->{lines}}) {
 		my @block_line = split //, $_;
 		my $hor = $block->{horizontal};
-		my $k = 0;
-		foreach my $j (@block_line) {
-			if($j eq '#') {
-				$rows[$block->{vertical} + $i][$hor + $k] = '#';
+		#foreach my $j (@block_line) {
+		for(my $j = 0; $j < @block_line; $j++) {
+			if($block_line[$j] eq '#') {
+				$rows[$block->{vertical} + $i][$hor + $j] = '#';
 			}
-			$k++;
 		}
 		$i++;
 	}
@@ -103,20 +95,6 @@ sub can_move_down {
 
 		$i++;
 	}
-
-	#my $bottom_line = $b->{lines}->[0];
-	#my @line = @{$rows[$b->{vertical}-1]};
-	#say "Line below us: @line";
-
-	#my @block_line = split //, $bottom_line;
-	#say "Our lowest block line: @block_line";
-	#my $i = 0;
-	#foreach(@block_line) {
-	#	if($_ eq '#' && $line[$hor_pos+$i] eq '#') {
-	#		$can_move = 0;
-	#	}
-	#	$i++;
-	#}
 	return $can_move;
 }
 
@@ -124,22 +102,17 @@ sub can_move_right {
 	my $b = shift;
 	my $can_move = 1;
 	my $hor_pos = $b->{horizontal};
-	return 0 if $hor_pos + $b->{max_width} == 7;
+	return 0 if $hor_pos + $b->{max_width} >= 7;
 
 	my $i = 0;
 	foreach(@{$b->{lines}}) {
 		my @line = @{$rows[$b->{vertical} + $i]};
-		my @block_line = reverse split //, $_;
-		# Either the position is free (not #) OR (it's not free but the block line does not have an element there
+		my @block_line = split //, $_;
 		for(my $j = 0; $j < @block_line; $j++) {
 			if(($line[$hor_pos+$j+1] eq '#' && $block_line[$j] eq '#')) {
 				$can_move = 0;
 			}
 		}
-		#if(($line[$hor_pos+scalar(@block_line)] eq '#' && $block_line[0] eq '#')) {
-		#	$can_move = 0;
-		#}
-
 		$i++;
 	}
 
@@ -150,21 +123,17 @@ sub can_move_left {
 	my $b = shift;
 	my $can_move = 1;
 	my $hor_pos = $b->{horizontal};
-	return 0 if $hor_pos == 0; # Can't go beyond 0 horizontally
+	return 0 if $hor_pos <= 0; # Can't go beyond 0 horizontally
 
 	my $i = 0;
 	foreach(@{$b->{lines}}) {
 		my @line = @{$rows[$b->{vertical} + $i]};
 		my @block_line = split //, $_;
-		# Either the position is free (not #) OR (it's not free but the block line does not have an element there
 		for(my $j = 0; $j < @block_line; $j++) {
 			if(($line[$hor_pos+$j-1] eq '#' && $block_line[$j] eq '#')) {
 				$can_move = 0;
 			}
 		}
-		#if(($line[$hor_pos - 1] eq '#' && $block_line[0] eq '#')) {
-		#	$can_move = 0;
-		#}
 		$i++;
 	}
 
