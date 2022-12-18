@@ -88,22 +88,35 @@ sub map_block {
 sub can_move_down {
 	my $b = shift;
 	my $can_move = 1;
+	my $hor_pos = $b->{horizontal};
 	return 0 if $b->{vertical} == 0;
 
-	my $hor_pos = $b->{horizontal};
-	my $bottom_line = $b->{lines}->[0];
-	my @line = @{$rows[$b->{vertical}-1]};
-	say "Line below us: @line";
-
-	my @block_line = split //, $bottom_line;
-	say "Our lowest block line: @block_line";
 	my $i = 0;
-	foreach(@block_line) {
-		if($_ eq '#' && $line[$hor_pos+$i] eq '#') {
-			$can_move = 0;
+	foreach(@{$b->{lines}}) {
+		my @line = @{$rows[$b->{vertical} - 1 + $i]}; # The line in the grid below
+		my @block_line = split //, $_;
+		for(my $j = 0; $j < @block_line; $j++) {
+			if(($line[$hor_pos+$j] eq '#' && $block_line[$j] eq '#')) {
+				$can_move = 0;
+			}
 		}
+
 		$i++;
 	}
+
+	#my $bottom_line = $b->{lines}->[0];
+	#my @line = @{$rows[$b->{vertical}-1]};
+	#say "Line below us: @line";
+
+	#my @block_line = split //, $bottom_line;
+	#say "Our lowest block line: @block_line";
+	#my $i = 0;
+	#foreach(@block_line) {
+	#	if($_ eq '#' && $line[$hor_pos+$i] eq '#') {
+	#		$can_move = 0;
+	#	}
+	#	$i++;
+	#}
 	return $can_move;
 }
 
@@ -118,9 +131,14 @@ sub can_move_right {
 		my @line = @{$rows[$b->{vertical} + $i]};
 		my @block_line = reverse split //, $_;
 		# Either the position is free (not #) OR (it's not free but the block line does not have an element there
-		if(($line[$hor_pos+scalar(@block_line)] eq '#' && $block_line[0] eq '#')) {
-			$can_move = 0;
+		for(my $j = 0; $j < @block_line; $j++) {
+			if(($line[$hor_pos+$j+1] eq '#' && $block_line[$j] eq '#')) {
+				$can_move = 0;
+			}
 		}
+		#if(($line[$hor_pos+scalar(@block_line)] eq '#' && $block_line[0] eq '#')) {
+		#	$can_move = 0;
+		#}
 
 		$i++;
 	}
@@ -139,9 +157,14 @@ sub can_move_left {
 		my @line = @{$rows[$b->{vertical} + $i]};
 		my @block_line = split //, $_;
 		# Either the position is free (not #) OR (it's not free but the block line does not have an element there
-		if(($line[$hor_pos - 1] eq '#' && $block_line[0] eq '#')) {
-			$can_move = 0;
+		for(my $j = 0; $j < @block_line; $j++) {
+			if(($line[$hor_pos+$j-1] eq '#' && $block_line[$j] eq '#')) {
+				$can_move = 0;
+			}
 		}
+		#if(($line[$hor_pos - 1] eq '#' && $block_line[0] eq '#')) {
+		#	$can_move = 0;
+		#}
 		$i++;
 	}
 
@@ -186,4 +209,16 @@ __END__
 block = ####, then vert = 3 and hor = 2, at creation.
 This will always be save since we start always 2 above the heighest rock
 
+Fixed a problem where I wasn't checking enough, now I check each and every line instead for going down, the bottom line, for going left the leftmost column, ....
+Case where this logic failed:
+|...#...|
+|..###..|
+|...#...|
+|....#..|
+|....#..|
+|....#..|
+---------
 
+If we only check the bottom line of the falling block, we find that we can drop 2 more rows whilst if we are checking all the lines, we'll notice we'll have to stop after dropping just 1 time.
+
+Same problem for left and right:
