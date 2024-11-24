@@ -1,0 +1,1 @@
+$c=0;for(split//){if($_ eq'*'){my@a=($r,$c);push@{$b{$y{$r}}},\@a&& push@{$b{\@a}},$y{$r}if$y{$r};push@{$b{$x{$c}}},\@a&& push@{$b{\@a}},$x{$c}if$x{$c};$y{$r}=$x{$c}=\@a}$c++}$r++}END{$t+=(@{$b{$_}}==2?1:@{$b{$_}}==3?3:@{$b{$_}}==4?6:0)foreach keys%b;print$t
