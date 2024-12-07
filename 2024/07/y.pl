@@ -3,45 +3,22 @@ use v5.36;
 my $s = 0;
 while(<DATA>) {
 	my ($total, @numbers) = (m/(\d+)/g);
-	say "Total: $total, numbers: @numbers";
-
 	my $subtotal = shift @numbers;
-	my $result = hm($total, $subtotal, @numbers);
-	say "\t: $result";
-	$s += $total if $result;
+	$s += $total if brute($total, $subtotal, @numbers);
 }
 say "Sol: $s";
 
-sub hm {
-	my ($t, $st, @n) = @_;
-	my $next_number = shift @n;
-	my $new_st = add($st, $next_number);
-	my $new_st2 = mul($st, $next_number);
-	my $new_st3 = concat($st, $next_number);
-	if(!@n) {
-		if($t == $new_st || $t == $new_st2 || $t == $new_st3) { return 1; } else { return 0; }
+sub brute {
+	my ($t, $st) = (shift, shift);
+	my $next_number = shift;
+	my $add = $st + $next_number;
+	my $mul = $st * $next_number;
+	my $concat = $st . $next_number;
+	if(!@_) {
+		return ($t == $add || $t == $mul || $t == $concat ? 1 : 0)
 	} else {
-		my $r1 = hm($t, $new_st, @n);
-		my $r2 = hm($t, $new_st2, @n);
-		my $r3 = hm($t, $new_st3, @n);
-		if($r1 || $r2 || $r3) {
-			return 1;
-		} else {
-			return 0;
-		}
+		return (brute($t, $add, @_) || brute($t, $mul, @_) || brute($t, $concat, @_) ? 1 : 0)
 	}
-}
-
-sub add {
-	return $_[0] + $_[1];
-}
-
-sub mul {
-	return $_[0] * $_[1];
-}
-
-sub concat {
-	return $_[0] . $_[1];
 }
 
 __DATA__
