@@ -43,6 +43,8 @@ while($j >= 0) {
 	while(ref($new_arr[$j-1]) && $new_arr[$j-1]->{id} == $j_id) {
 		$length_file++; $j--;
 	}
+
+	# We need to keep going down, if we replaced something and we encounter it again, we do not move it again
 	if($last_id && $j_id != $last_id - 1) {
 		say "incorrect j_id (should be $last_id - 1)";
 		$j--;
