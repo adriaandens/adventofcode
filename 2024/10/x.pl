@@ -22,46 +22,23 @@ my $ocean = '~' x $width;
 my @waves = split //, $ocean;
 push @map, \@waves;
 
-foreach(@map) {
-	say @{$_};
-}
-
+my @dir = ([0,1],[0,-1],[1,0],[-1,0]);
 my %trails = ();
 for(my $i = 1; $i < @map; $i++) {
 	for(my $j = 1; $j < $width; $j++) {
-		if($map[$i][$j] eq '0') {
-			say "found 0: $i, $j";
-			brr($i, $j, undef);
-		}
+		brr($i, $j, undef) if $map[$i][$j] eq '0';
 	}
 }
 
 sub brr {
 	my ($r, $c, $path) = @_;
 	my $val = $map[$r][$c];
-	if(!$path || $val == 9) { # Only zero pos & 9 pos
-		$path .= "->($r,$c)";
-	}
-	if($val == 9) {
-		# We are at the end
+	$path .= "->($r,$c)" if !$path || $val == 9; # Only zero pos & 9 pos
+	if($val == 9) { # We are at the end
 		$trails{$path} = 1;
 	} else { # look for val around you that are one higher
-		if($map[$r][$c+1] ne '~' && $map[$r][$c+1] ne '.' && $map[$r][$c+1] == $val + 1) {
-			brr($r, $c+1, $path);
-		}
-		if($map[$r][$c-1] ne '~' && $map[$r][$c-1] ne '.' && $map[$r][$c-1] == $val + 1) {
-			brr($r, $c-1, $path);
-		}
-		if($map[$r-1][$c] ne '~' && $map[$r-1][$c] ne '.' && $map[$r-1][$c] == $val + 1) {
-			brr($r-1, $c, $path);
-		}
-		if($map[$r+1][$c] ne '~' && $map[$r+1][$c] ne '.' && $map[$r+1][$c] == $val + 1) {
-			brr($r+1, $c, $path)
-		}
+		map { brr($r+$_->[0], $c+$_->[1], $path) if $map[$r+$_->[0]][$c+$_->[1]] ne '~' && $map[$r+$_->[0]][$c+$_->[1]] ne '.' && $map[$r+$_->[0]][$c+$_->[1]] == $val + 1 } @dir;
 	}
-}
-foreach(keys(%trails)) {
-	say
 }
 say "Sol: " . keys(%trails);
 
