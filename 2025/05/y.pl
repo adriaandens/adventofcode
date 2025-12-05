@@ -27,8 +27,6 @@ while(<DATA>) {
 				last;
 			} else {
 				say "\tsome overlap: " . $elem[0] . "-" . $elem[1];
-				#push @overlaps, $elem[0] . "-" . $elem[1];
-				#push @overlaps, $overlapping_range;
 				$sc = $elem[2]; # Since 0-1 is overlapping, we no longer need to take it into account.
 				$ec = $elem[3];
 				say "\tnew range: $sc-$ec";
@@ -43,28 +41,6 @@ while(<DATA>) {
 			push @fresh_ranges, "$sc-$ec";	
 		}
 	}
-	#if(!@overlaps) {
-	#	say "\tthere were no overlaps at all, so just push the entire range";
-	#	push @fresh_ranges, "$sc-$ec";
-	#} else {
-	#	say "\tthere were some overlaps, so calculate how much remains";
-	#	my $fully_encapsulated = 0;
-	#	my @remaining_ranges = ();
-	#	foreach(@overlaps) {
-	#		my @elem = split "-", $_;
-	#		if($elem[2] eq '#' && $elem[3] eq '#') {
-	#			# we're fully encapsulated, so there is NO NEW fresh range
-	#			$fully_encapsulated = 1;
-	#			last;
-	#		} else {
-	#			#@remaining_ranges = fix($elem[2], $elem[3], @remaining_ranges);
-	#			push @remaining_ranges, $elem[2] . '-' . $elem[3];
-	#			if(@elem > 4) {
-	#				push @remaining_ranges, $elem[4] . '-' . $elem[5];
-	#			}
-	#		}
-	#	}
-	#}
 }
 
 foreach(@fresh_ranges) {
@@ -73,16 +49,9 @@ foreach(@fresh_ranges) {
 }
 say "Solution: $fresh_ids";
 
-sub fix {
-	my ($s, $e, @ranges) = @_;
-	foreach(@ranges) {
-		# check if our remaining range $s-$e matches with another remaining range
-		my ($a, $b) = split /-/;
-		my $overlap = check_overlap($s, $e, $a, $b);
-	}
-}
-
 # return "<start overlap>-<end overlap>-<non-overlap-start>-<non-overlap-end>";
+# optionally, it'll give an extra range at the end in case our current range is encapsulating the one we're checking
+# because then the middle part is overlapping, and you get two non-overlapping zones
 sub check_overlap {
 	my ($sc, $ec, $s, $e) = @_;
 	if($sc >= $s && $ec <= $e) { #inside existing range
@@ -93,7 +62,7 @@ sub check_overlap {
 		return "$sc-$e-" . ($e+1) . "-$ec";
 	} elsif($sc < $s && $ec > $e) { # encapsulates existing range
 		return "$s-$e-$sc-" . ($s-1) . "-" . ($e+1) . "-$ec";
-	} else {
+	} else { # no overlap
 		return "#-#-$sc-$ec";
 	}
 }
