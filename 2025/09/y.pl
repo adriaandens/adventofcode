@@ -32,111 +32,16 @@ foreach(keys(%neigh)) {
 }
 
 my $largest_found = 0;
-for(my $i = 0; $i < @co; $i++) {
-	say "co is " . $co[$i][0] . '#' . $co[$i][1];
-	my @neighs = @{$neigh{$co[$i][0] . '#' . $co[$i][1]}};
-	my $rn;my $cn;
-	foreach(@neighs) {
-		if($co[$i][0] == $_->[0]) { # same row
-			$rn = $_;
-		} else {
-			$cn = $_;
-		}
-	}
-	# now we have to compare each row neigh with each col neigh
-	say "\trn is " . $rn->[0] . '#' . $rn->[1];
-	say "\tcn is " . $cn->[0] . '#' . $cn->[1];
-	# we have a square/rect if one of the rn neighbours reaches as far as the row of the col neighbour
-	# and (? or) the col neighbour can reach the col of the row neighbour
-	#    rn <-----> OG
-	#
-	#    nnnnnn 
-	#         n
-	#??????   n     cn
-	#     ?
-	#     ? <--- if there is a neighbour there, that means we have a line and an "inside" rect
-	#my @cn_neighs = @{$neigh{$cn->[0] . '#' . $cn->[1]}};
-	my $cn_ok = -1;
-	#foreach(@cn_neighs) {
-	#	say "\t\tcol neigh: " . $_->[0] . '#' . $_->[1];
-	#	#if($_->[0] == $cn->[0] && $_->[1] >= $rn->[1] && $rn->[1] < $co[$i][1]) { # same row as cn and the node has to be 
-	#	if($_->[0] == $cn->[0] && $_->[1] >= $rn->[1] && $rn->[1] < $co[$i][1]) { # same row as cn and the node has to be 
-	#		$cn_ok = $_;
-	#		say "\t\tfound neigbour $_->[0]#$_->[1]";
-	#	} elsif($_->[0] == $cn->[0] && $_->[1] >= $rn->[1] && $rn->[1] > $co[$i][1]) { # same row as cn AND it's furt
-	#		$cn_ok = $_;
-	#		say "\t\tfound neigbour $_->[0]#$_->[1]";
-	#	}
-	#}
-	#my @rn_neighs = @{$neigh{$rn->[0] . '#' . $rn->[1]}};
-	my $rn_ok = -1;
-	#foreach(@rn_neighs) {
-	#	say "\t\trow neigh: " . $_->[0] . '#' . $_->[1];
-	#	if($_->[1] == $rn->[1] && $_->[0] >= $cn->[0] && $cn->[0] > $co[$i][0]) {
-	#		$rn_ok = $_;
-	#		say "\t\tfound neigbour $_->[0]#$_->[1]";
-	#	} elsif($_->[1] == $rn->[1] && $_->[0] <= $cn->[0] && $cn->[0] < $co[$i][0]) {
-	#		$rn_ok = $_;
-	#		say "\t\tfound neigbour $_->[0]#$_->[1]";
-	#	}
-	#}
-	$cn_ok = get_neigh_whos_not(@{$neigh{$cn->[0] . '#' . $cn->[1]}}, \@co);
-	say "\t\tcol neigh: " . $cn_ok->[0] . '#' . $cn_ok->[1];
-	$rn_ok = get_neigh_whos_not(@{$neigh{$rn->[0] . '#' . $rn->[1]}}, \@co);
-	say "\t\trow neigh: " . $rn_ok->[0] . '#' . $rn_ok->[1];
-	if($cn_ok != -1 || $rn_ok != -1) { #we can make a square
-		my $area = 0;
-		if($cn_ok != -1) {
-			my @nnnn = check_if_neighbour_in_square($co[$i], $cn_ok);
-			if(!@nnnn) {
-				my $temp_area = calc($co[$i], $cn_ok);
-				$area = $temp_area if $temp_area > $area;
-			} else {
-				foreach(@nnnn) {
-					if(!check_if_neighbour_in_square($co[$i], $_)) {
-						my $temp_area = calc($co[$i], $_);
-						if($temp_area > $area) {
-							$area = $temp_area;
-						}
-					}
+for(my $i = 0; $i < @co - 1; $i++) {
+	for(my $j = $i+1; $j < @co; $j++) {
+		if(!check_if_neighbour_in_square($co[$i], $co[$j])) {
+			if(!line_crossing($co[$i], $co[$j])) {
+				my $area = calc($co[$i], $co[$j]);
+				if($area > $largest_found) {
+					say "Found larger ($area): :" . $co[$i]->[0] . '#' . $co[$i]->[1] . ' -> ' . $co[$j]->[0] . '#' . $co[$j]->[1];
+					$largest_found = $area;
 				}
 			}
-		}
-		if($rn_ok != -1) {
-			my @nnnn = check_if_neighbour_in_square($co[$i], $rn_ok);
-			if(!@nnnn) {
-				my $temp_area = calc($co[$i], $rn_ok);
-				$area = $temp_area if $temp_area > $area;
-			} else {
-				foreach(@nnnn) {
-					if(!check_if_neighbour_in_square($co[$i], $_)) {
-						my $temp_area = calc($co[$i], $_);
-						if($temp_area > $area) {
-							$area = $temp_area;
-						}
-					}
-				}
-			}
-		}
-		my @ccc = ($cn_ok->[0], $rn_ok->[1]);
-		my @nnnn = check_if_neighbour_in_square($co[$i], \@ccc);
-		if(!@nnnn) {
-			my $temp_area = calc($co[$i], \@ccc);
-			$area = $temp_area if $temp_area > $area;
-		} else {
-			foreach(@nnnn) {
-				if(!check_if_neighbour_in_square($co[$i], $_)) {
-					my $temp_area = calc($co[$i], $_);
-					if($temp_area > $area) {
-						$area = $temp_area;
-					}
-				}
-			}
-		}
-		
-		say "\tarea of $area";
-		if($area > $largest_found) {
-			$largest_found = $area;
 		}
 	}
 }
@@ -152,10 +57,51 @@ sub get_neigh_whos_not {
 	return -1;
 }
 
-sub check_if_neighbour_in_square {
+sub line_crossing {
 	my ($a, $b) = @_;
-	my @inside_neigh_squares = ();
 	foreach(@co) {
+		next if($_ == $a || $_ == $b);
+		my $id = $_->[0] . '#' . $_->[1];	
+		my @neighs = @{$neigh{$id}};
+		return 1 if check_line_cross($a, $b, $_, $neighs[0]); # line with neighbour 1
+		return 1 if check_line_cross($a, $b, $_, $neighs[1]); # line with neighbour 2
+	}
+}
+
+sub check_line_cross {
+	my ($a, $b, $x, $y) = @_;
+	if($x->[0] == $y->[0]) { # same row
+		my $col;
+		if($x->[1] < $y->[1]) {
+			$col = int(($y->[1] - $x->[1])/ 2) + $x->[1];
+		} else {
+			$col = int(($x->[1] - $y->[1])/ 2) + $y->[1];
+		}
+		my @middle = ($x->[0], $col);
+		my @nodes = (\@middle);
+		return 1 if check_if_neighbour_in_square($a, $b, \@nodes);
+	} elsif($x->[1] == $y->[1]) { # same col
+		my $row;
+		if($x->[0] < $y->[0]) {
+			$row = int(($y->[0] - $x->[0])/ 2) + $x->[0];
+		} else {
+			$row = int(($x->[0] - $y->[0])/ 2) + $y->[0];
+		}
+		my @middle = ($row, $x->[1]);
+		my @nodes = (\@middle);
+		return 1 if check_if_neighbour_in_square($a, $b, \@nodes);
+	}
+}
+
+sub check_if_neighbour_in_square {
+	my $a = shift;
+	my $b = shift;
+	my @inside_neigh_squares = ();
+	my $hmpf = \@co;
+	if(@_) {
+		$hmpf = shift;
+	}
+	foreach(@{$hmpf}) {
 		if($a->[0] < $b->[0] && $a->[1] < $b->[1]) { # A = topleft, B = rightbottom
 			if($_->[0] > $a->[0] && $_->[0] < $b->[0] && $_->[1] > $a->[1] && $_->[1] < $b->[1]) {
 				push @inside_neigh_squares, $_;
