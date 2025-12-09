@@ -1,80 +1,181 @@
 use v5.40;
 
-my @grid = ();
 my @co = ();
+my %neigh = ();
+my $first;
+my $prev;
+my $prev_id;
 while(<DATA>) {
 	chomp;
 	my ($c, $r) = split /,/;
 	my @c = ($r, $c);
 	push @co, \@c;
-	if(!$grid[$r]) {
-		my @row = ();
-		$row[$c] = 'r';
-		$grid[$r] = \@row;
-	} else {
-		$grid[$r][$c] = 'r';
-	}
+	my @neighbours = ();
+	push @neighbours, $prev if $prev;
+	$first = \@c if !$prev;
+	$neigh{$c[0] . '#' . $c[1]} = \@neighbours;
+	push @{$neigh{$prev_id}}, \@c if $prev_id;
+	$prev_id = $c[0] . '#' . $c[1]; # updating prev
+	$prev = \@c;
 }
+push @{$neigh{$prev_id}}, $first;
+push @{$neigh{$first->[0] . '#' . $first->[1]}}, $prev;
 
-#foreach(@grid) {
-#	foreach(@$_) {
-#		if(!defined($_)) {
-#			print '.';
-#		} else {
-#			print $_;
-#		}
-#	}
-#	print "\n";
-#}
-#print "\n";
-
-for(my $i = 0; $i < @co; $i++) {
-	for(my $j = 0; $j < @co; $j++) {
-		if($co[$i][0] == $co[$j][0]) { # same row
-			if($co[$i][1] >= $co[$j][1]) {
-				for(my $k = $co[$j][1]+1; $k < $co[$i][1]; $k++) {
-						$grid[$co[$i][0]][$k] = 'g';
-				}
-			} else {
-				for(my $k = $co[$i][1]+1; $k < $co[$j][1]; $k++) {
-						$grid[$co[$i][0]][$k] = 'g';
-				}
-			}
-		} elsif($co[$i][1] == $co[$j][1]) { # same column
-			if($co[$i][0] >= $co[$j][0]) {
-				for(my $k = $co[$j][0]+1; $k < $co[$i][0]; $k++) {
-						$grid[$k][$co[$j][1]] = 'g';
-				}
-			} else {
-				for(my $k = $co[$i][0]+1; $k < $co[$j][0]; $k++) {
-						$grid[$k][$co[$j][1]] = 'g';
-				}
-			}
+foreach(keys(%neigh)) {
+	my $size = scalar(@{$neigh{$_}});
+	if($size > 2) {
+		say "node: $_";
+		foreach(@{$neigh{$_}}) {
+			say "\t" . ${$_}[0] . '#' . ${$_}[1];	
 		}
 	}
 }
 
-#foreach(@grid) {
-#	foreach(@$_) {
-#		if(!defined($_)) {
-#			print '.';
-#		} else {
-#			print $_;
-#		}
-#	}
-#	print "\n";
-#}
+my $largest_found = 0;
+for(my $i = 0; $i < @co; $i++) {
+	say "co is " . $co[$i][0] . '#' . $co[$i][1];
+	my @neighs = @{$neigh{$co[$i][0] . '#' . $co[$i][1]}};
+	my $rn;my $cn;
+	foreach(@neighs) {
+		if($co[$i][0] == $_->[0]) { # same row
+			$rn = $_;
+		} else {
+			$cn = $_;
+		}
+	}
+	# now we have to compare each row neigh with each col neigh
+	say "\trn is " . $rn->[0] . '#' . $rn->[1];
+	say "\tcn is " . $cn->[0] . '#' . $cn->[1];
+	# we have a square/rect if one of the rn neighbours reaches as far as the row of the col neighbour
+	# and (? or) the col neighbour can reach the col of the row neighbour
+	#    rn <-----> OG
+	#
+	#    nnnnnn 
+	#         n
+	#??????   n     cn
+	#     ?
+	#     ? <--- if there is a neighbour there, that means we have a line and an "inside" rect
+	#my @cn_neighs = @{$neigh{$cn->[0] . '#' . $cn->[1]}};
+	my $cn_ok = -1;
+	#foreach(@cn_neighs) {
+	#	say "\t\tcol neigh: " . $_->[0] . '#' . $_->[1];
+	#	#if($_->[0] == $cn->[0] && $_->[1] >= $rn->[1] && $rn->[1] < $co[$i][1]) { # same row as cn and the node has to be 
+	#	if($_->[0] == $cn->[0] && $_->[1] >= $rn->[1] && $rn->[1] < $co[$i][1]) { # same row as cn and the node has to be 
+	#		$cn_ok = $_;
+	#		say "\t\tfound neigbour $_->[0]#$_->[1]";
+	#	} elsif($_->[0] == $cn->[0] && $_->[1] >= $rn->[1] && $rn->[1] > $co[$i][1]) { # same row as cn AND it's furt
+	#		$cn_ok = $_;
+	#		say "\t\tfound neigbour $_->[0]#$_->[1]";
+	#	}
+	#}
+	#my @rn_neighs = @{$neigh{$rn->[0] . '#' . $rn->[1]}};
+	my $rn_ok = -1;
+	#foreach(@rn_neighs) {
+	#	say "\t\trow neigh: " . $_->[0] . '#' . $_->[1];
+	#	if($_->[1] == $rn->[1] && $_->[0] >= $cn->[0] && $cn->[0] > $co[$i][0]) {
+	#		$rn_ok = $_;
+	#		say "\t\tfound neigbour $_->[0]#$_->[1]";
+	#	} elsif($_->[1] == $rn->[1] && $_->[0] <= $cn->[0] && $cn->[0] < $co[$i][0]) {
+	#		$rn_ok = $_;
+	#		say "\t\tfound neigbour $_->[0]#$_->[1]";
+	#	}
+	#}
+	$cn_ok = get_neigh_whos_not(@{$neigh{$cn->[0] . '#' . $cn->[1]}}, \@co);
+	say "\t\tcol neigh: " . $cn_ok->[0] . '#' . $cn_ok->[1];
+	$rn_ok = get_neigh_whos_not(@{$neigh{$rn->[0] . '#' . $rn->[1]}}, \@co);
+	say "\t\trow neigh: " . $rn_ok->[0] . '#' . $rn_ok->[1];
+	if($cn_ok != -1 || $rn_ok != -1) { #we can make a square
+		my $area = 0;
+		if($cn_ok != -1) {
+			my @nnnn = check_if_neighbour_in_square($co[$i], $cn_ok);
+			if(!@nnnn) {
+				my $temp_area = calc($co[$i], $cn_ok);
+				$area = $temp_area if $temp_area > $area;
+			} else {
+				foreach(@nnnn) {
+					if(!check_if_neighbour_in_square($co[$i], $_)) {
+						my $temp_area = calc($co[$i], $_);
+						if($temp_area > $area) {
+							$area = $temp_area;
+						}
+					}
+				}
+			}
+		}
+		if($rn_ok != -1) {
+			my @nnnn = check_if_neighbour_in_square($co[$i], $rn_ok);
+			if(!@nnnn) {
+				my $temp_area = calc($co[$i], $rn_ok);
+				$area = $temp_area if $temp_area > $area;
+			} else {
+				foreach(@nnnn) {
+					if(!check_if_neighbour_in_square($co[$i], $_)) {
+						my $temp_area = calc($co[$i], $_);
+						if($temp_area > $area) {
+							$area = $temp_area;
+						}
+					}
+				}
+			}
+		}
+		my @ccc = ($cn_ok->[0], $rn_ok->[1]);
+		my @nnnn = check_if_neighbour_in_square($co[$i], \@ccc);
+		if(!@nnnn) {
+			my $temp_area = calc($co[$i], \@ccc);
+			$area = $temp_area if $temp_area > $area;
+		} else {
+			foreach(@nnnn) {
+				if(!check_if_neighbour_in_square($co[$i], $_)) {
+					my $temp_area = calc($co[$i], $_);
+					if($temp_area > $area) {
+						$area = $temp_area;
+					}
+				}
+			}
+		}
+		
+		say "\tarea of $area";
+		if($area > $largest_found) {
+			$largest_found = $area;
+		}
+	}
+}
+say "Solution: $largest_found";
 
-#my $largest_found = 0;
-#for(my $i = 0; $i < @co; $i++) {
-#	for(my $j = 0; $j < @co; $j++) {
-#		my $area = calc($co[$i], $co[$j]);
-#		if($largest_found < $area) {
-#			$largest_found = $area;
-#		}
-#	}
-#}
-#say "Solution: $largest_found";
+sub get_neigh_whos_not {
+	my $not = pop;
+	foreach(@_) {
+		if($_->[0] != $not->[0] && $_->[1] != $not->[1]) {
+			return $_;
+		}
+	}
+	return -1;
+}
+
+sub check_if_neighbour_in_square {
+	my ($a, $b) = @_;
+	my @inside_neigh_squares = ();
+	foreach(@co) {
+		if($a->[0] < $b->[0] && $a->[1] < $b->[1]) { # A = topleft, B = rightbottom
+			if($_->[0] > $a->[0] && $_->[0] < $b->[0] && $_->[1] > $a->[1] && $_->[1] < $b->[1]) {
+				push @inside_neigh_squares, $_;
+			}
+		} elsif($a->[0] < $b->[0] && $a->[1] > $b->[1]) { # A = topright, B = leftbottom
+			if($_->[0] > $a->[0] && $_->[0] < $b->[0] && $_->[1] < $a->[1] && $_->[1] > $b->[1]) {
+				push @inside_neigh_squares, $_;
+			}
+		} elsif($a->[0] > $b->[0] && $a->[1] > $b->[1]) { # A = rightbottom, B = lefttop
+			if($_->[0] > $b->[0] && $_->[0] < $a->[0] && $_->[1] > $b->[1] && $_->[1] < $a->[1]) {
+				push @inside_neigh_squares, $_;
+			}
+		} elsif($a->[0] > $b->[0] && $a->[1] < $b->[1]) { # A = leftbottom, B = righttop
+			if($_->[0] > $b->[0] && $_->[0] < $a->[0] && $_->[1] > $a->[1] && $_->[1] < $b->[1]) {
+				push @inside_neigh_squares, $_;
+			}
+		}
+	}
+	return @inside_neigh_squares;
+}
 
 sub calc {
 	my ($a, $b) = @_;
