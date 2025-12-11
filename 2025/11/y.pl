@@ -2,7 +2,9 @@ use v5.40;
 
 my %nodes = ();
 my @edges = ();
-my $start_node;
+my $start_node_svr;
+my $start_node_fft;
+my $start_node_dac;
 while(<DATA>) {
 	chomp;
 	my ($name, $conns) = split /: /;
@@ -10,43 +12,118 @@ while(<DATA>) {
 	say "Node $name has outputs @outputs";
 	my %node = (name => $name, outputs => \@outputs);
 	$nodes{$name} = \%node;
-	if($name eq 'svr') {
-		$start_node = \%node;
+	if($name eq 'fft') {
+		$start_node_fft = \%node;
+	} elsif($name eq 'svr') {
+		$start_node_svr = \%node;
+	} elsif($name eq 'dac') {
+		$start_node_dac= \%node;
 	}
 }
 
-my @chain = ($start_node);
-my @dfs_queue = (\@chain);
-my $reached_out = 0;
-while(@dfs_queue) {
-	my $chain = shift @dfs_queue;
-	my @chainz = @{$chain};
-	my $last_node = $chainz[$#chainz];
-	my $children = $last_node->{outputs};
-	foreach(@$children) {
-		if($_ eq 'out') { 
-			my $found_fft = 0;
-			my $found_dac = 0;
-			foreach(@{$chain}) {
-				$found_fft = 1 if $_->{name} eq 'fft';
-				$found_dac = 1 if $_->{name} eq 'dac';
+# bfs was too slow
+# We realize that if we would have a loop, that there's infinite amount of paths (because you can take the loop 0..inf times)
+# so it must be acyclic directed graph. By graphing it, we find that it's svr -> fft -> dac -> out
+# when implementing it with BFS, the number of child nodes is so big, it fills up my entire memory for the FFT -> DAC (SVR->FFT, DAC->OUT was still OK with BFS).
+# So I implemented DFS and keep track of the times i've encountered the end node. Unlike a normal DFS, i need to aggregate the results once I'm finished with all the children of a node to update its value. So before pushing the children to the front of the queue, i push the node name to the front of the queue (so it'll be behind the children when they're all done processing). I then make some logic if i encounter a simple string in the dfs queue, and then i know i have to count it all up.
+my $reached_out = dfs($start_node_dac, 'out', 14);
+say "reached out: $reached_out";
+my $reached_fft = dfs($start_node_svr, 'fft', 14);
+say "reached fft: $reached_fft";
+my $reached_dac = dfs($start_node_fft, 'dac', 16);
+say "reached dac: $reached_dac";
+
+say $reached_out * $reached_fft * $reached_dac;
+
+
+sub dfs {
+	my ($start_node, $end_node_name, $max_depth) = @_;
+	my @chain = ($start_node);
+	my @dfs_queue = (\@chain);
+	my %number_of_finds = (); # Key: nodename, Value: amount of finds.
+	while(@dfs_queue) {
+		my $chain = shift @dfs_queue;
+		if(ref($chain)) {
+			my @chainz = @{$chain};
+			my $last_node = $chainz[$#chainz];
+			my $children = $last_node->{outputs};
+			if(defined($number_of_finds{$last_node->{name}})) {
+				# we reached the same node via another path
+			} else {
+				say "Putting $last_node->{name} name in the dfs queue";
+				unshift @dfs_queue, $last_node->{name}; # Put yourself back in the queue as a string.
+				$number_of_finds{$last_node->{name}} = 0;
 			}
-			if($found_fft && $found_dac) {
-				say "\twe found both!!!";
-				$reached_out++
+			foreach(@$children) {
+				if($_ eq $end_node_name) { 
+					say "found the end node as a child, so increasing $last_node->{name} value";
+					#$number_of_finds{$last_node->{name}}++;
+					$number_of_finds{$_} = 1;
+				} else { # add to queue
+					if(scalar(@chainz) > $max_depth) {
+						#we're too deep in this node
+						say "$_ is too deep, set finds to 0";
+						$number_of_finds{$_} = 0 if !defined($number_of_finds{$_});
+						next;
+					}
+					if(!defined($number_of_finds{$_})) { # If we already know, we don't have to redo it.
+						say "pushing the child $_ to the queue to go deeper";
+						my @new_chain = ();
+						foreach(@{$chain}) {
+							push @new_chain, $_;
+						}
+						push @new_chain, $nodes{$_};
+						unshift @dfs_queue, \@new_chain;
+					}
+				}
 			}
-		} else { # add to queue
-			my @new_chain = ();
-			foreach(@{$chain}) {
-				push @new_chain, $_;
+		} else { # node is complete
+			say "node $chain is complete (all children done, taken string from queue";
+			my $node = $nodes{$chain};
+			my $count = 0;
+			foreach(@{$node->{outputs}}) {
+				say "checking child $_ count value";
+				$count += $number_of_finds{$_};
 			}
-			push @new_chain, $nodes{$_};
-			unshift @dfs_queue, \@new_chain;
+			$number_of_finds{$chain} = $count;
 		}
 	}
+	$number_of_finds{$start_node->{name}};
 }
 
-say "Solution: $reached_out";
+sub bfs {
+	my ($start_node, $end_node_name) = @_;
+	my @chain = ($start_node);
+	my @bfs_queue = (\@chain);
+	my $total_found = 0;
+	my $depth_found = 0;
+	while(@bfs_queue) {
+		my $chain = shift @bfs_queue;
+		my @chainz = @{$chain};
+		my $last_node = $chainz[$#chainz];
+		my $children = $last_node->{outputs};
+		foreach(@$children) {
+			if($_ eq $end_node_name) { 
+				$total_found++;
+				if($depth_found < scalar(@chainz)) {
+					$depth_found = scalar(@chainz);
+					say "depth set to $depth_found";
+				}
+			} else { # add to queue
+				next if scalar(@chainz) > $depth_found + 1 && $depth_found > 0;
+				my @new_chain = ();
+				foreach(@{$chain}) {
+					push @new_chain, $_;
+				}
+				push @new_chain, $nodes{$_};
+				push @bfs_queue, \@new_chain;
+			}
+		}
+	}
+	$total_found
+}
+
+#say "Solution: $total";
 
 __DATA__
 wun: qqa eed
